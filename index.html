@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>MCB Site Manager</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1115" />
+  <link rel="icon" href="./icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header>
+    <div class="hwrap">
+      <div class="brand" role="button" tabindex="0" id="homeBtn">
+        <img src="./logo.png" alt="Matty Campbell Building logo" />
+        <div class="title" id="headerTitle">MCB Site Manager</div>
+      </div>
+      <div class="topactions noPrint">
+        <button class="pill" id="syncBtn" title="Data is stored on this device">Offline</button>
+        <button class="btn small" id="themeBtn" title="Toggle theme">Theme</button>
+        <button class="btn small" id="exportBtn" title="Export all data">Export</button>
+        <button class="btn small" id="importBtn" title="Import data">Import</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <div class="footerbar noPrint">
+    <div class="nav">
+      <button class="btn" data-nav="projects">Projects</button>
+      <button class="btn" data-nav="tasks">Tasks</button>
+      <button class="btn" data-nav="diary">Diary</button>
+      <button class="btn" data-nav="reports">Reports</button>
+      <button class="btn" data-nav="settings">Settings</button>
+    </div>
+  </div>
+
+  <div class="modalback" id="modalBack">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <input type="file" id="importFile" accept="application/json" style="display:none" />
+
+  <script src="./app.js"></script>
+</body>
+</html>
