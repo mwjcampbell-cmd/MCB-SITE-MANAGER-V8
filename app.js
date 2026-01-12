@@ -209,7 +209,7 @@ function filesToDataUrls(fileList){
   if(!files.length) return Promise.resolve([]);
 
   return Promise.all(files.map(file => new Promise(resolve => {
-    try {
+    try{
       const reader = new FileReader();
       reader.onload = () => resolve({
         id: uid(),
@@ -219,13 +219,12 @@ function filesToDataUrls(fileList){
         dataUrl: reader.result,
         createdAt: new Date().toISOString()
       });
-      // Never throw: iOS formats (e.g. HEIC) can fail; we just skip that file
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(file);
-    } catch (e) {
+    }catch(e){
       resolve(null);
     }
-  }))).then(results => results.filter(Boolean));
+  }))).then(arr => arr.filter(Boolean));
 }
 
 // Geo (optional): try geocode with Nominatim (works on https; may be blocked on some hosts)
@@ -1144,61 +1143,40 @@ function openTaskForm(seed={}){
   $("#closeM").onclick = closeModal;
   $("#cancelT").onclick = closeModal;
 
-  $("#saveT").onclick = async () => {
-  const btn = $("#saveT");
-  if (btn) {
-    btn.disabled = true;
-    btn.dataset._oldText = btn.textContent || "Save";
-    btn.textContent = "Saving…";
-  }
-
-  try {
-    const id = $("#tId")?.value || uid();
-    const projectId = $("#tProject")?.value || "";
-    const title = $("#tTitle")?.value || "";
-    const dueDate = $("#tDue")?.value || "";
-    const status = $("#tStatus")?.value || "To do";
-    const notes = $("#tNotes")?.value || "";
-
-    const photosInput = $("#tPhotos");
-    const newPhotos = photosInput ? await filesToDataUrls(photosInput.files) : [];
-
-    let task = (state.tasks || []).find(t => t.id === id);
-    if (!task) {
-      task = { id };
-      state.tasks = state.tasks || [];
-      state.tasks.push(task);
+  $("#saveT").onclick = async ()=>{
+    const __btn = $("#saveT");
+    setBtnBusy(__btn, true);
+    const __hint = showSavingHint("Saving…");
+    try{
+    const added = await filesToDataUrls($("#t_photos").files);
+    t.projectId = $("#t_project").value;
+    t.title = $("#t_title").value.trim();
+    t.details = $("#t_details").value.trim();
+    t.status = $("#t_status").value;
+    t.dueDate = $("#t_due").value;
+    t.assignedSubbieId = $("#t_subbie").value || null;
+    t.photos = [...(t.photos||[]), ...added];
+    t.updatedAt = new Date().toISOString();
+    if(!t.title){ alert("Title required."); return; }
+    if(isEdit){
+      state.tasks = state.tasks.map(x=>x.id===t.id ? t : x);
+    }else{
+      state.tasks.unshift(t);
     }
-
-    Object.assign(task, {
-      projectId,
-      title,
-      dueDate,
-      status,
-      notes,
-      photos: [...(task.photos || []), ...newPhotos],
-      updatedAt: new Date().toISOString()
-    });
-
     await saveState(state);
     closeModal();
     render();
-  } catch (err) {
-    console.error(err);
-    alert("Task could not be saved.");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = btn.dataset._oldText || "Save";
-      delete btn.dataset._oldText;
+    } finally {
+      __hint && __hint.remove();
+      setBtnBusy(__btn, false);
     }
-  }
-};
+
+  };
 
   $("#delT") && ($("#delT").onclick = ()=>{
     if(confirmDelete(`task "${t.title}"`)){
       state.tasks = state.tasks.filter(x=>x.id!==t.id);
-      saveState(state);
+      await saveState(state);
       closeModal();
       render();
     }
@@ -1366,65 +1344,42 @@ function openDiaryForm(seed={}){
   $("#closeM").onclick = closeModal;
   $("#cancelD").onclick = closeModal;
 
-  $("#saveD").onclick = async () => {
-  const btn = $("#saveD");
-  if (btn) {
-    btn.disabled = true;
-    btn.dataset._oldText = btn.textContent || "Save";
-    btn.textContent = "Saving…";
-  }
-
-  try {
-    const id = $("#dId")?.value || uid();
-    const projectId = $("#dProject")?.value || "";
-    const date = $("#dDate")?.value || new Date().toISOString().slice(0,10);
-    const category = $("#dCategory")?.value || "";
-    const summary = $("#dSummary")?.value || "";
-    const hours = Number($("#dHours")?.value || 0);
-    const rate = Number($("#dRate")?.value || settings.labourRate || 0);
-    const billable = !!$("#dBillable")?.checked;
-
-    const photosInput = $("#dPhotos");
-    const newPhotos = photosInput ? await filesToDataUrls(photosInput.files) : [];
-
-    let entry = (state.diary || []).find(d => d.id === id);
-    if (!entry) {
-      entry = { id };
-      state.diary = state.diary || [];
-      state.diary.push(entry);
+  $("#saveD").onclick = async ()=>{
+    const __btn = $("#saveD");
+    setBtnBusy(__btn, true);
+    const __hint = showSavingHint("Saving…");
+    try{
+    const added = await filesToDataUrls($("#d_photos").files);
+    d.projectId = $("#d_project").value;
+    d.date = $("#d_date").value;
+    d.hours = $("#d_hours").value;
+    d.category = $("#d_cat").value;
+    d.billable = $("#d_bill").value === "true";
+    d.rate = $("#d_rate").value;
+    d.summary = $("#d_sum").value.trim();
+    d.photos = [...(d.photos||[]), ...added];
+    d.updatedAt = new Date().toISOString();
+    if(!d.projectId){ alert("Project required."); return; }
+    if(!d.date){ alert("Date required."); return; }
+    if(isEdit){
+      state.diary = state.diary.map(x=>x.id===d.id ? d : x);
+    }else{
+      state.diary.unshift(d);
     }
-
-    Object.assign(entry, {
-      projectId,
-      date,
-      category,
-      summary,
-      hours,
-      rate,
-      billable,
-      photos: [...(entry.photos || []), ...newPhotos],
-      updatedAt: new Date().toISOString()
-    });
-
     await saveState(state);
     closeModal();
     render();
-  } catch (err) {
-    console.error(err);
-    alert("Diary entry could not be saved.");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = btn.dataset._oldText || "Save";
-      delete btn.dataset._oldText;
+    } finally {
+      __hint && __hint.remove();
+      setBtnBusy(__btn, false);
     }
-  }
-};
+
+  };
 
   $("#delD") && ($("#delD").onclick = ()=>{
     if(confirmDelete(`diary entry ${dateFmt(d.date)}`)){
       state.diary = state.diary.filter(x=>x.id!==d.id);
-      saveState(state);
+      await saveState(state);
       closeModal();
       render();
     }
