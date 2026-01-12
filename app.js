@@ -1336,37 +1336,62 @@ function openDiaryForm(seed={}){
   $("#closeM").onclick = closeModal;
   $("#cancelD").onclick = closeModal;
 
-  $("#saveD").onclick = async ()=>{
-    const __btn = $("#saveD");
-    setBtnBusy(__btn, true);
-    const __hint = showSavingHint("Saving…");
-    try{
-    const added = await filesToDataUrls($("#d_photos").files);
-    d.projectId = $("#d_project").value;
-    d.date = $("#d_date").value;
-    d.hours = $("#d_hours").value;
-    d.category = $("#d_cat").value;
-    d.billable = $("#d_bill").value === "true";
-    d.rate = $("#d_rate").value;
-    d.summary = $("#d_sum").value.trim();
-    d.photos = [...(d.photos||[]), ...added];
-    d.updatedAt = new Date().toISOString();
-    if(!d.projectId) alert("Project required.");
-    if(!d.date) alert("Date required.");
-    if(isEdit){
-      state.diary = state.diary.map(x=>x.id===d.id ? d : x);
-    }else{
-      state.diary.unshift(d);
-    }
-    saveState(state);
-    closeModal();
-    render();
-    } finally {
-      __hint && __hint.remove();
-      setBtnBusy(__btn, false);
+  $("#saveD").onclick = async () => {
+  const btn = $("#saveD");
+  // prevent double-taps + show progress
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset._oldText = btn.textContent || "Save";
+    btn.textContent = "Saving…";
+  }
+
+  try {
+    const id = $("#dId")?.value || uid();
+    const projectId = $("#dProject")?.value || "";
+    const date = $("#dDate")?.value || new Date().toISOString().slice(0,10);
+    const category = $("#dCategory")?.value || "";
+    const summary = $("#dSummary")?.value || "";
+    const hours = Number($("#dHours")?.value || 0);
+    const rate = Number($("#dRate")?.value || settings.labourRate || 0);
+    const billable = !!$("#dBillable")?.checked;
+
+    // IMPORTANT: wait for all photos to finish converting BEFORE saving/closing
+    const photosInput = $("#dPhotos");
+    const newPhotos = await filesToDataUrls(photosInput?.files);
+
+    let entry = (state.diary || []).find(d => d.id === id);
+    if (!entry) {
+      entry = { id };
+      state.diary = state.diary || [];
+      state.diary.push(entry);
     }
 
-  };
+    Object.assign(entry, {
+      projectId,
+      date,
+      category,
+      summary,
+      hours,
+      rate,
+      billable,
+      photos: [...(entry.photos || []), ...(newPhotos || [])],
+      updatedAt: new Date().toISOString()
+    });
+
+    await saveState(state);   // persist (IndexedDB + localStorage)
+    closeModal();             // close only AFTER save completes
+    render();                 // refresh UI
+  } catch (err) {
+    console.error(err);
+    alert("Diary entry could not be saved.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btn.dataset._oldText || "Save";
+      delete btn.dataset._oldText;
+    }
+  }
+};
 
   $("#delD") && ($("#delD").onclick = ()=>{
     if(confirmDelete(`diary entry ${dateFmt(d.date)}`)){
