@@ -1148,24 +1148,32 @@ function openTaskForm(seed={}){
     setBtnBusy(__btn, true);
     const __hint = showSavingHint("Saving…");
     try{
-    const added = await filesToDataUrls($("#t_photos").files);
-    t.projectId = $("#t_project").value;
-    t.title = $("#t_title").value.trim();
-    t.details = $("#t_details").value.trim();
-    t.status = $("#t_status").value;
-    t.dueDate = $("#t_due").value;
-    t.assignedSubbieId = $("#t_subbie").value || null;
-    t.photos = [...(t.photos||[]), ...added];
-    t.updatedAt = new Date().toISOString();
-    if(!t.title){ alert("Title required."); return; }
-    if(isEdit){
-      state.tasks = state.tasks.map(x=>x.id===t.id ? t : x);
-    }else{
-      state.tasks.unshift(t);
-    }
-    await saveState(state);
-    closeModal();
-    render();
+      const photoInput = $("#t_photos");
+      const added = photoInput ? await filesToDataUrls(photoInput.files) : [];
+
+      t.projectId = $("#t_project").value;
+      t.title = $("#t_title").value.trim();
+      t.details = $("#t_details").value.trim();
+      t.status = $("#t_status").value;
+      t.dueDate = $("#t_due").value;
+      t.assignedSubbieId = $("#t_subbie").value || null;
+      t.photos = [...(t.photos||[]), ...added];
+      t.updatedAt = new Date().toISOString();
+
+      if(!t.title){
+        alert("Title required.");
+        return;
+      }
+
+      if(isEdit){
+        state.tasks = state.tasks.map(x=>x.id===t.id ? t : x);
+      }else{
+        state.tasks.unshift(t);
+      }
+
+      await saveState(state);
+      closeModal();
+      render();
     } finally {
       __hint && __hint.remove();
       setBtnBusy(__btn, false);
@@ -1176,7 +1184,7 @@ function openTaskForm(seed={}){
   $("#delT") && ($("#delT").onclick = ()=>{
     if(confirmDelete(`task "${t.title}"`)){
       state.tasks = state.tasks.filter(x=>x.id!==t.id);
-      await saveState(state);
+      saveState(state);
       closeModal();
       render();
     }
@@ -1349,26 +1357,37 @@ function openDiaryForm(seed={}){
     setBtnBusy(__btn, true);
     const __hint = showSavingHint("Saving…");
     try{
-    const added = await filesToDataUrls($("#d_photos").files);
-    d.projectId = $("#d_project").value;
-    d.date = $("#d_date").value;
-    d.hours = $("#d_hours").value;
-    d.category = $("#d_cat").value;
-    d.billable = $("#d_bill").value === "true";
-    d.rate = $("#d_rate").value;
-    d.summary = $("#d_sum").value.trim();
-    d.photos = [...(d.photos||[]), ...added];
-    d.updatedAt = new Date().toISOString();
-    if(!d.projectId){ alert("Project required."); return; }
-    if(!d.date){ alert("Date required."); return; }
-    if(isEdit){
-      state.diary = state.diary.map(x=>x.id===d.id ? d : x);
-    }else{
-      state.diary.unshift(d);
-    }
-    await saveState(state);
-    closeModal();
-    render();
+      const photoInput = $("#d_photos");
+      const added = photoInput ? await filesToDataUrls(photoInput.files) : [];
+
+      d.projectId = $("#d_project").value;
+      d.date = $("#d_date").value;
+      d.hours = $("#d_hours").value;
+      d.category = $("#d_cat").value;
+      d.billable = $("#d_bill").value === "true";
+      d.rate = $("#d_rate").value;
+      d.summary = $("#d_sum").value.trim();
+      d.photos = [...(d.photos||[]), ...added];
+      d.updatedAt = new Date().toISOString();
+
+      if(!d.projectId){
+        alert("Project required.");
+        return;
+      }
+      if(!d.date){
+        alert("Date required.");
+        return;
+      }
+
+      if(isEdit){
+        state.diary = state.diary.map(x=>x.id===d.id ? d : x);
+      }else{
+        state.diary.unshift(d);
+      }
+
+      await saveState(state);
+      closeModal();
+      render();
     } finally {
       __hint && __hint.remove();
       setBtnBusy(__btn, false);
@@ -1379,7 +1398,7 @@ function openDiaryForm(seed={}){
   $("#delD") && ($("#delD").onclick = ()=>{
     if(confirmDelete(`diary entry ${dateFmt(d.date)}`)){
       state.diary = state.diary.filter(x=>x.id!==d.id);
-      await saveState(state);
+      saveState(state);
       closeModal();
       render();
     }
